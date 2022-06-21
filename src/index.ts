@@ -17,7 +17,7 @@ function runProjectCommand(
   opts: {
     print?: "error" | "all" | "nothing"
     error?: (cmd: string, status: number) => string
-  } = {},
+  } = {}
 ) {
   const print = opts?.print || "all"
   log(`Running \`${command}\``)
@@ -60,7 +60,6 @@ function buildFilterArgs(filter: string | string[] | undefined | null): string {
   return (typeof filter === "string" ? [filter] : filter).map(f => `--filter '${f}'`).join(" ")
 }
 
-
 type Logger = (arg: any, ...args: any[]) => void
 
 function createLogger(level: "log" | "error" | "debug" | "warn"): Logger {
@@ -78,11 +77,11 @@ const log = createLogger("log"),
 
 function placeholder(text: string, params: Record<string, () => any>) {
   for (const [param, val] of Object.entries(params)) {
-    const replaceValue = val()?.toString();
+    const replaceValue = val()?.toString()
     const variable = "{" + param + "}"
     text = text.replaceAll(variable, replaceValue)
   }
-  return text;
+  return text
 }
 
 function npmWhoami(): string | null {
@@ -90,24 +89,21 @@ function npmWhoami(): string | null {
     shell: true,
   })
   if (status !== 0) {
-    return null;
+    return null
   } else {
-    return stdout.toString().trim();
+    return stdout.toString().trim()
   }
-
 }
 
-
 function isWorkspace() {
-  const workspaceFile = path.resolve('.', 'pnpm-workspace.yaml')
+  const workspaceFile = path.resolve(".", "pnpm-workspace.yaml")
   if (fs.existsSync(workspaceFile)) {
     log(`Found ${workspaceFile}. Treating project as pnpm workspace`)
-    return true;
+    return true
   } else {
     log(`${workspaceFile} not found. Treating project as an individual pnpm project`)
-    return false;
+    return false
   }
-
 }
 
 async function run(args: any) {
@@ -123,27 +119,31 @@ async function run(args: any) {
     throw new Error(`--version command line argument is required`)
   }
 
-  const whoami = npmWhoami();
+  const whoami = npmWhoami()
   if (!whoami) {
     if (!args.publish) {
-      warn(`⚠️⚠️⚠️ Not authorized. Will continue because of dry run. Before running with --publish make sure you're authorized with \`pnpm login\`. Read more about npm auth: https://github.com/jitsucom/monorel#authorization-best-practices `)
+      warn(
+        `⚠️⚠️⚠️ Not authorized. Will continue because of dry run. Before running with --publish make sure you're authorized with \`pnpm login\`. Read more about npm auth: https://github.com/jitsucom/monorel#authorization-best-practices `
+      )
     } else {
-      throw new Error(`Can't find npm auth - make sure you're authorized with \`pnpm login\`.\n\t Read more about npm auth: https://github.com/jitsucom/monorel#authorization-best-practices`)
+      throw new Error(
+        `Can't find npm auth - make sure you're authorized with \`pnpm login\`.\n\t Read more about npm auth: https://github.com/jitsucom/monorel#authorization-best-practices`
+      )
     }
   } else {
     log(`NPM Registry - authorized as ${whoami}`)
   }
 
-  const version = placeholder(args.version, {"rev": getRevision})
+  const version = placeholder(args.version, { rev: getRevision })
   const gitTag = `v${version}`
-  const originalVersion = process.env.npm_package_version;
+  const originalVersion = process.env.npm_package_version
   log(`Releasing version ${version}. Git tag: ${gitTag}`)
   if (getFromCli(`git tag -l ${gitTag}`).trim() !== "") {
     throw new Error(
-      `Tag ${gitTag} already exists. Seems like version ${version} has already been released. If you believe this is an error, please run \`git tag -d ${gitTag}\``,
+      `Tag ${gitTag} already exists. Seems like version ${version} has already been released. If you believe this is an error, please run \`git tag -d ${gitTag}\``
     )
   }
-  runProjectCommand(`pnpm version ${isWorkspace() ? '--ws ' : ' '}--no-git-tag-version ${version}`)
+  runProjectCommand(`pnpm version ${isWorkspace() ? "--ws " : " "}--no-git-tag-version ${version}`)
   try {
     if (!args.publish) {
       log("Skipping publish, making a dry run. Add --publish to make a real release.")
@@ -151,7 +151,7 @@ async function run(args: any) {
     runProjectCommand(
       `pnpm publish --tag ${args.tag} ${buildFilterArgs(args.filter)} --access public --force --no-git-checks ${
         args.publish ? "" : "--dry-run"
-      }`,
+      }`
     )
     const tagCommand = `git tag -a ${gitTag} -m "Release ${version}"`
     if (args.publish) {
@@ -161,7 +161,7 @@ async function run(args: any) {
     }
   } finally {
     try {
-      runProjectCommand(`pnpm version ${isWorkspace() ? '--ws ' : ' '}--no-git-tag-version ${originalVersion}`)
+      runProjectCommand(`pnpm version ${isWorkspace() ? "--ws " : " "}--no-git-tag-version ${originalVersion}`)
     } catch (e) {
       error("Failed to rollback to 0.0.0", e)
     }
