@@ -126,9 +126,9 @@ async function run(args: any) {
   const whoami = npmWhoami();
   if (!whoami) {
     if (!args.publish) {
-      warn(`⚠️⚠️⚠️ Not authorized. Will continue because of dry run. Before running with --publish make sure you're authorized with \`pnpm login\` `)
+      warn(`⚠️⚠️⚠️ Not authorized. Will continue because of dry run. Before running with --publish make sure you're authorized with \`pnpm login\`. Read more about npm auth: https://github.com/jitsucom/monorel#authorization-best-practices `)
     } else {
-      throw new Error(`Can't find npm auth - make sure you're authorized with \`pnpm login\``)
+      throw new Error(`Can't find npm auth - make sure you're authorized with \`pnpm login\`.\n\t Read more about npm auth: https://github.com/jitsucom/monorel#authorization-best-practices`)
     }
   } else {
     log(`NPM Registry - authorized as ${whoami}`)
@@ -144,13 +144,12 @@ async function run(args: any) {
     )
   }
   runProjectCommand(`pnpm version ${isWorkspace() ? '--ws ' : ' '}--no-git-tag-version ${version}`)
-  const npmTag = args.canary ? "canary" : "latest"
   try {
     if (!args.publish) {
       log("Skipping publish, making a dry run. Add --publish to make a real release.")
     }
     runProjectCommand(
-      `pnpm publish --tag ${npmTag} ${buildFilterArgs(args.filter)} --access public --force --no-git-checks ${
+      `pnpm publish --tag ${args.tag} ${buildFilterArgs(args.filter)} --access public --force --no-git-checks ${
         args.publish ? "" : "--dry-run"
       }`,
     )
