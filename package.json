@@ -19,6 +19,9 @@
     "dist",
     "bin"
   ],
+  "bin": {
+    "monorel": "./bin/monorel"
+  },
   "keywpords": [
     "monorepo",
     "publish",
