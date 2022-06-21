@@ -30,9 +30,29 @@ Add following scripts to your root `package.json`:
 }
 ```
 
-Run `pnpm release:publish --release X.Y.Z` to dry run publishing of release version `X.Y.Z`. If it looks good run `pnpm release:publish --release X.Y.Z --publish` to make a push to an `npm`
+Run `pnpm release:publish --version X.Y.Z` to dry run publishing of release version `X.Y.Z`. 
+If it looks good run `pnpm release:publish --version X.Y.Z --publish` to make a push to an `npm`
 
-Run `pnpm release:canary` to publish a canary release. The release version will be `2.0.0.alpha.${sequentialNumber}`. The version will be tagged with `canary` tag
+Run `pnpm release:canary` to publish a canary release. The release version will be `2.0.0.alpha.${sequentialNumber}`. The version 
+will be tagged with `canary` tag
+
+## Authorization best practices
+
+`monorel` relies on NPM registry authorization in current shell. It will fail if authorization is absent 
+
+You can check if you're authorized by running `pnpm whoami` in the same shell where you plan to run `monorel`.
+
+There two ways to authorize yourself:
+ - Run `pnpm login`. This method will work if you're making releases manually, but for running automatic releases throuh CI you will need a different 
+method
+ - Create `.npmrc`, add `//registry.npmjs.org/:_authToken=${NPM_TOKEN}` to the beginning and get a [NPM token](https://docs.npmjs.com/creating-and-viewing-access-tokens). Later
+you could supply NPM_TOKEN to your CI tool for automated releases. But if you do that, *NPM will always look for `NPM_TOKEN`*. All commands (including `pnpm whoami`) will
+if NPM_TOKEN is undefined or invalid, even you successfully logger in with `pnpm login` before
+
+If you're doing only manual releases, `pnpm login` will work just fine. But universal solution will be adding an auth instruction to `.npmrc`, and
+defining NPM_TOKEN locally (example )
+
+
 
 ## Parameters reference
 
@@ -40,16 +60,15 @@ Run `pnpm release:canary` to publish a canary release. The release version will 
 
 Version pattern. The end version will be a result of replacements of placeholders in VERSION_PATTERN. Placeholder expressions:
 
-* `${rev}` — sequiential revision numver
+* `{rev}` — sequiential revision numver
 
 Those placeholders aren't suported yet, but will be in the future:
 
-* `${workspaceNpmVersion}` — version of workspace package
-* `${gitRev}` — current git revision id
-* `${time}` — time as `20220601234501`
-* `${any javascript expression}` - any javascript expressions
+* `{workspaceNpmVersion}` — version of workspace package
+* `{gitRev}` — current git revision id
+* `{time}` — time as `20220601234501`
 
-### --tag TAG
+### `--tag TAG`
 
 NPM registry tag. Usually either `canary` or `latest`
 
