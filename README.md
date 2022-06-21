@@ -24,35 +24,38 @@ Add following scripts to your root `package.json`:
 ```json
 {
   "scripts": {
-    "release:publish": "monorel --filter './packages/a'  --filter './packages/b'",
-    "canary:publish": "monorel --filter './packages/a'  --filter './packages/b' --canary 2.0.0.alpha --publish"
+    "release:publish": "monorel --tag latest --filter './packages/a'  --filter './packages/b'",
+    "canary:publish": "monorel --filter './packages/a'  --filter './packages/b' --version '2.0.0.alpha.${rev}' --tag canary --publish"
   }
 }
 ```
 
 Run `pnpm release:publish --release X.Y.Z` to dry run publishing of release version `X.Y.Z`. If it looks good run `pnpm release:publish --release X.Y.Z --publish` to make a push to an `npm`
 
-Run `pnpm release:publish --release X.Y.Z` to dry run publishing of release version `X.Y.Z`. If it looks good run `pnpm release:publish --release X.Y.Z --publish` to make a push to an `npm` registry. The release will be tagged with `latest` tag
-
 Run `pnpm release:canary` to publish a canary release. The release version will be `2.0.0.alpha.${sequentialNumber}`. The version will be tagged with `canary` tag
 
 ## Parameters reference
 
-### `--canary VERSION`
+### `--version VERSION_PATTERN`
 
-Makes a canary release. The end version will be `VERSION.REVISION` (`REVISION` is sequintial). The release will be tagged with `canary` tag
+Version pattern. The end version will be a result of replacements of placeholders in VERSION_PATTERN. Placeholder expressions:
 
-### `--release VERSION`
+* `${rev}` — sequiential revision numver
 
-Makes a stable release (VERISON). The release will be tagged with `latest` tag
+Those placeholders aren't suported yet, but will be in the future:
 
-> **Note**
-> `--canary` or `--release` should be specified (but not both)
+* `${workspaceNpmVersion}` — version of workspace package
+* `${gitRev}` — current git revision id
+* `${time}` — time as `20220601234501`
+* `${any javascript expression}` - any javascript expressions
 
+### --tag TAG
+
+NPM registry tag. Usually either `canary` or `latest`
 
 ### `--publish`
 
-Unless specified, monorel will do a dry run
+Unless specified, monorel will do a dry run (meaning no actual publishing is done)
 
 ### `--filter`
 
