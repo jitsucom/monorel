@@ -79,7 +79,7 @@ function placeholder(text: string, params: Record<string, () => any>) {
   for (const [param, val] of Object.entries(params)) {
     const replaceValue = val()?.toString()
     const variable = "{" + param + "}"
-    text = text.replaceAll(variable, replaceValue)
+    text = text.split(variable).join(replaceValue)
   }
   return text
 }
