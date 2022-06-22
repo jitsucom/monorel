@@ -49,6 +49,13 @@ function printStdout(stdout: any, prefix: string) {
   ].join(`\n${prefix}`)
 }
 
+function getReleaseTime(): string {
+  const twoDigit = (val: string | number) => (val.toString().length == 1 ? `0${val.toString()}` : val.toString())
+  const now = new Date()
+  return `${now.getUTCFullYear()}${twoDigit(now.getUTCMonth() + 1)}${twoDigit(now.getUTCDate())}${twoDigit(
+    now.getUTCHours()
+  )}${twoDigit(now.getUTCMinutes())}${twoDigit(now.getUTCSeconds())}`
+}
 function getRevision() {
   return getFromCli("git rev-list --abbrev-commit HEAD").split("\n").length
 }
@@ -75,9 +82,9 @@ const log = createLogger("log"),
   warn = createLogger("warn"),
   error = createLogger("error")
 
-function placeholder(text: string, params: Record<string, () => any>) {
+function placeholder(text: string, params: Record<string, (() => any) | any>) {
   for (const [param, val] of Object.entries(params)) {
-    const replaceValue = val()?.toString()
+    const replaceValue = typeof val == "function" ? val()?.toString() : val?.toString()
     const variable = "{" + param + "}"
     text = text.split(variable).join(replaceValue)
   }
@@ -115,8 +122,8 @@ async function run(args: any) {
     throw new Error(`--version command line argument is required`)
   }
 
-  if (!args.tag) {
-    throw new Error(`--version command line argument is required`)
+  if (!args["npm-tag"]) {
+    throw new Error(`--npm-tag command line argument is required`)
   }
 
   const whoami = npmWhoami()
@@ -134,8 +141,8 @@ async function run(args: any) {
     log(`NPM Registry - authorized as ${whoami}`)
   }
 
-  const version = placeholder(args.version, { rev: getRevision })
-  const gitTag = `v${version}`
+  const version = placeholder(args.version, { rev: getRevision, time: getReleaseTime })
+  const gitTag = placeholder(args["git-tag"] || `v{version}`, { version })
   const originalVersion = process.env.npm_package_version
   log(`Releasing version ${version}. Git tag: ${gitTag}`)
   if (getFromCli(`git tag -l ${gitTag}`).trim() !== "") {
@@ -149,15 +156,23 @@ async function run(args: any) {
       log("Skipping publish, making a dry run. Add --publish to make a real release.")
     }
     runProjectCommand(
-      `pnpm publish --tag ${args.tag} ${buildFilterArgs(args.filter)} --access public --force --no-git-checks ${
+      `pnpm publish --tag ${args["npm-tag"]} ${buildFilterArgs(args.filter)} --access public --force --no-git-checks ${
         args.publish ? "" : "--dry-run"
       }`
     )
     const tagCommand = `git tag -a ${gitTag} -m "Release ${version}"`
+    const pushCommand = args["push-tag"] ? `git push origin ${gitTag}` : ""
     if (args.publish) {
       runProjectCommand(tagCommand)
+      if (pushCommand) {
+        runProjectCommand(pushCommand)
+      }
     } else {
-      log(`Because of dry run, not tagging the release. Here is the command that would tag it: ${tagCommand}`)
+      log(
+        `Because of dry run, not tagging the release. Here is the command that would tag it: \`${tagCommand}${
+          pushCommand ? ` && ${pushCommand}` : ""
+        }\``
+      )
     }
   } finally {
     try {

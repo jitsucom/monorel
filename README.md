@@ -24,8 +24,8 @@ Add following scripts to your root `package.json`:
 ```json
 {
   "scripts": {
-    "release:publish": "monorel --tag latest --filter './packages/a'  --filter './packages/b'",
-    "canary:publish": "monorel --filter './packages/a'  --filter './packages/b' --version '2.0.0.alpha.${rev}' --tag canary --publish"
+    "release:publish": "monorel --npm-tag latest --filter './packages/a'  --filter './packages/b'",
+    "canary:publish": "monorel --filter './packages/a'  --filter './packages/b' --version '2.0.0.alpha.${rev}' --npm-tag canary --publish"
   }
 }
 ```
@@ -61,16 +61,19 @@ defining NPM_TOKEN locally (example )
 Version pattern. The end version will be a result of replacements of placeholders in VERSION_PATTERN. Placeholder expressions:
 
 * `{rev}` — sequiential revision numver
-
-Those placeholders aren't suported yet, but will be in the future:
-
-* `{workspaceNpmVersion}` — version of workspace package
-* `{gitRev}` — current git revision id
 * `{time}` — time as `20220601234501`
 
-### `--tag TAG`
+### `--npm-tag TAG`
 
 NPM registry tag. Usually either `canary` or `latest`
+
+### `--git-tag TAG`
+
+Git tag pattern. By default it's `v{version}`.
+
+### `--push-tag`
+
+If Git tag should be pushed to origin (default is `false`)
 
 ### `--publish`
 
