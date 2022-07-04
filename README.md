@@ -25,7 +25,7 @@ Add following scripts to your root `package.json`:
 {
   "scripts": {
     "release:publish": "monorel --npm-tag latest --filter './packages/a'  --filter './packages/b'",
-    "canary:publish": "monorel --filter './packages/a'  --filter './packages/b' --version '2.0.0.alpha.${rev}' --npm-tag canary --publish"
+    "canary:publish": "monorel --filter './packages/a'  --filter './packages/b' --version '2.0.0.alpha.{rev}' --npm-tag canary --publish"
   }
 }
 ```
