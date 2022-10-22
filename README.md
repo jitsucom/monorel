@@ -7,7 +7,7 @@
  - Works only for `pnpm` based monorepos
  - Non-intrusive. The only change it makes is git tags. **Monorel never changes version in your code**
  - Do not requires configuration file. All options are exposed as cli parameters
- - Stable releases are manual, canary releases are automatic
+ - Designed to run canary releases in CI environment. Stable releases should be run manually
 
 ## Installation
 
@@ -25,7 +25,7 @@ Add following scripts to your root `package.json`:
 {
   "scripts": {
     "release:publish": "monorel --npm-tag latest --filter './packages/a'  --filter './packages/b'",
-    "canary:publish": "monorel --filter './packages/a'  --filter './packages/b' --version '2.0.0.alpha.{rev}' --npm-tag canary --publish"
+    "canary:publish": "monorel --filter './packages/a'  --filter './packages/b' --version '2.0.0-alpha.{rev}' --npm-tag canary --publish"
   }
 }
 ```
@@ -33,7 +33,7 @@ Add following scripts to your root `package.json`:
 Run `pnpm release:publish --version X.Y.Z` to dry run publishing of release version `X.Y.Z`. 
 If it looks good run `pnpm release:publish --version X.Y.Z --publish` to make a push to an `npm`
 
-Run `pnpm release:canary` to publish a canary release. The release version will be `2.0.0.alpha.${sequentialNumber}`. The version 
+Run `pnpm release:canary` to publish a canary release. The release version will be `2.0.0=alpha.${sequentialNumber}`. The version 
 will be tagged with `canary` tag
 
 ## Authorization best practices
