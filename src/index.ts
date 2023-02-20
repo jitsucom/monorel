@@ -113,7 +113,49 @@ function isWorkspace() {
   }
 }
 
+type FileUpdater = {
+  updateFile(path: string, newContent: string | ((oldContent: string) => string))
+  rollback()
+}
+
+function updateDependencies(
+  packageJson,
+  version: string,
+  depType: "dependencies" | "devDependencies" = "dependencies"
+) {
+  for (const [depName, depVersion] of Object.entries((packageJson[depType] || {}) as Record<string, string>)) {
+    if (depVersion.toLowerCase().trim() === "workspace:*") {
+      packageJson[depType][depName] = version
+    }
+  }
+}
+
+function createFileUpdater(): FileUpdater {
+  const rollbacks: Record<string, string> = {}
+  return {
+    rollback() {
+      for (const [path, content] of Object.entries(rollbacks)) {
+        fs.writeFileSync(path, content)
+      }
+    },
+    updateFile(path: string, newContent: string | ((oldContent: string) => string)) {
+      const currentContent = fs.readFileSync(path).toString()
+      rollbacks[path] = currentContent
+      const newContentStr = typeof newContent === "string" ? newContent : newContent(currentContent)
+      fs.writeFileSync(path, newContentStr)
+    },
+  }
+}
+
 async function run(args: any) {
+  const workingDir = path.resolve(args["dir"] || process.cwd() || ".")
+  const rootPackageJsonFile = path.resolve(workingDir, "package.json")
+  if (!fs.existsSync(rootPackageJsonFile)) {
+    throw new Error(`Can't find package.json in ${workingDir}`)
+  }
+  const packageJson = JSON.parse(fs.readFileSync(rootPackageJsonFile).toString())
+  const fileUpdater: FileUpdater = createFileUpdater()
+
   if (!args.filter) {
     log("No filter specified, running release for all packages")
   }
@@ -143,15 +185,45 @@ async function run(args: any) {
 
   const version = placeholder(args.version, { rev: getRevision, time: getReleaseTime })
   const gitTag = placeholder(args["git-tag"] || `v{version}`, { version })
-  const originalVersion = process.env.npm_package_version
-  log(`Releasing version ${version}. Git tag: ${gitTag}`)
+  const originalVersion = packageJson.version
+  if (!originalVersion) {
+    throw new Error(`Can't find original version of the package. All env variables: ${JSON.stringify(process.env)}`)
+  }
+  log(`Releasing version ${version} (current version ${originalVersion}). Git tag: ${gitTag}`)
   if (getFromCli(`git tag -l ${gitTag}`).trim() !== "") {
     throw new Error(
       `Tag ${gitTag} already exists. Seems like version ${version} has already been released. If you believe this is an error, please run \`git tag -d ${gitTag}\``
     )
   }
-  runProjectCommand(`pnpm version ${isWorkspace() ? "--ws " : " "}--no-git-tag-version ${version}`)
+
   try {
+    fileUpdater.updateFile(rootPackageJsonFile, (oldContent: string) => {
+      return JSON.stringify({ ...JSON.parse(oldContent), version: version }, null, 2)
+    })
+
+    if (isWorkspace()) {
+      const pnpmWorkspacesJsonString = runProjectCommand(`pnpm m ls --json`, { print: "error" }).stdout.toString()
+      let subpackages: any
+      try {
+        subpackages = JSON.parse(pnpmWorkspacesJsonString)
+      } catch (e: any) {
+        throw new Error(`Can't parse output of \`pnpm m ls --json\` as JSON: \`${e?.message}\``)
+      }
+      for (const subpackage of subpackages) {
+        const subpackagePath = subpackage.path
+        const subpackagePackageJsonFile = path.resolve(subpackagePath, "package.json")
+        if (!fs.existsSync(subpackagePackageJsonFile)) {
+          throw new Error(`Can't find package.json in ${subpackagePath}`)
+        }
+        fileUpdater.updateFile(subpackagePackageJsonFile, (oldContent: string) => {
+          const packageJson = JSON.parse(oldContent)
+          packageJson.version = version
+          updateDependencies(packageJson, version)
+          return JSON.stringify(packageJson, null, 2)
+        })
+      }
+    }
+
     if (!args.publish) {
       log("Skipping publish, making a dry run. Add --publish to make a real release.")
     }
@@ -175,11 +247,7 @@ async function run(args: any) {
       )
     }
   } finally {
-    try {
-      runProjectCommand(`pnpm version ${isWorkspace() ? "--ws " : " "}--no-git-tag-version ${originalVersion}`)
-    } catch (e) {
-      error("Failed to rollback to 0.0.0", e)
-    }
+    fileUpdater.rollback()
   }
 }
 
