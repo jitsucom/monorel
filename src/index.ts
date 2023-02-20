@@ -247,6 +247,7 @@ async function run(args: any) {
       )
     }
   } finally {
+    log(`Rolling back version in package.json(s) ${version} → ${originalVersion}`)
     fileUpdater.rollback()
   }
 }

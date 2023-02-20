@@ -5,15 +5,15 @@
   "main": "index.js",
   "scripts": {
     "clean": "rm -rf ./dist",
-    "build": "pnpm code-style:check && tsc -p .",
-    "code-style:check": "prettier --check --config ./.prettierrc.json --ignore-path ./.prettierignore .",
-    "code-style:fix": "prettier --write --config ./.prettierrc.json --ignore-path ./.prettierignore .",
+    "build": "pnpm format:check && tsc -p .",
+    "format:check": "prettier --check --config ./.prettierrc.json --ignore-path ./.prettierignore .",
+    "format": "prettier --write --config ./.prettierrc.json --ignore-path ./.prettierignore .",
     "monorel": "./bin/monorel",
     "release:publish": "pnpm monorel --npm-tag latest --git-tag 'release-v{version}' --push-tags",
     "canary:publish": "pnpm monorel --version '0.4.0-alpha.{rev}.{time}' --npm-tag canary --git-tag 'canary-v{version}' --push-tag --publish",
     "ci": "pnpm clean && pnpm build && pnpm canary:publish",
     "prepare": "husky install",
-    "precommit": "pnpm code-style:check"
+    "precommit": "pnpm format:check"
   },
   "files": [
     "dist",
