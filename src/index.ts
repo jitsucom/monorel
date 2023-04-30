@@ -135,10 +135,12 @@ function createFileUpdater(): FileUpdater {
   return {
     rollback() {
       for (const [path, content] of Object.entries(rollbacks)) {
+        debug(`Rolling back ${path}`)
         fs.writeFileSync(path, content)
       }
     },
     updateFile(path: string, newContent: string | ((oldContent: string) => string)) {
+      debug(`Updating file ${path}. The file will be rolled back after the release`)
       const currentContent = fs.readFileSync(path).toString()
       rollbacks[path] = currentContent
       const newContentStr = typeof newContent === "string" ? newContent : newContent(currentContent)
