@@ -124,7 +124,7 @@ function createFileUpdater(): FileUpdater {
   return {
     rollback() {
       for (const [path, content] of Object.entries(rollbacks)) {
-        debug(`Rolling back ${path}. Content: ${content}`)
+        //debug(`Rolling back ${path}. Content: ${content}`)
         fs.writeFileSync(path, content)
       }
     },
@@ -132,9 +132,9 @@ function createFileUpdater(): FileUpdater {
       if (rollbacks[path]) {
         throw new Error(`File ${path} is already updated`)
       }
-      debug(`Updating file ${path}. The file will be rolled back after the release`)
+      //debug(`Updating file ${path}. The file will be rolled back after the release`)
       const currentContent = fs.readFileSync(path).toString()
-      debug(`Current content of ${path} is ${currentContent}`)
+      //debug(`Current content of ${path} is ${currentContent}`)
       rollbacks[path] = currentContent
       const newContentStr = typeof newContent === "string" ? newContent : newContent(currentContent)
       fs.writeFileSync(path, newContentStr)

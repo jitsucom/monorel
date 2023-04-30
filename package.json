@@ -10,7 +10,7 @@
     "format": "prettier --write --config ./.prettierrc.json --ignore-path ./.prettierignore .",
     "monorel": "./bin/monorel",
     "release:publish": "pnpm monorel --npm-tag latest --git-tag 'release-v{version}' --push-tags",
-    "canary:publish": "pnpm monorel --version '0.4.2-alpha.{rev}.{time}' --npm-tag canary --git-tag 'canary-v{version}' --push-tag --publish",
+    "canary:publish": "pnpm monorel --version '0.4.3-alpha.{rev}.{time}' --npm-tag canary --git-tag 'canary-v{version}' --push-tag --publish",
     "ci": "pnpm clean && pnpm build && pnpm canary:publish",
     "prepare": "husky install",
     "precommit": "pnpm format:check"
