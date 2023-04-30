@@ -102,17 +102,6 @@ function npmWhoami(): string | null {
   }
 }
 
-function isWorkspace() {
-  const workspaceFile = path.resolve(".", "pnpm-workspace.yaml")
-  if (fs.existsSync(workspaceFile)) {
-    log(`Found ${workspaceFile}. Treating project as pnpm workspace`)
-    return true
-  } else {
-    log(`${workspaceFile} not found. Treating project as an individual pnpm project`)
-    return false
-  }
-}
-
 type FileUpdater = {
   updateFile(path: string, newContent: string | ((oldContent: string) => string))
   rollback()
@@ -135,13 +124,17 @@ function createFileUpdater(): FileUpdater {
   return {
     rollback() {
       for (const [path, content] of Object.entries(rollbacks)) {
-        debug(`Rolling back ${path}`)
+        debug(`Rolling back ${path}. Content: ${content}`)
         fs.writeFileSync(path, content)
       }
     },
     updateFile(path: string, newContent: string | ((oldContent: string) => string)) {
+      if (rollbacks[path]) {
+        throw new Error(`File ${path} is already updated`)
+      }
       debug(`Updating file ${path}. The file will be rolled back after the release`)
       const currentContent = fs.readFileSync(path).toString()
+      debug(`Current content of ${path} is ${currentContent}`)
       rollbacks[path] = currentContent
       const newContentStr = typeof newContent === "string" ? newContent : newContent(currentContent)
       fs.writeFileSync(path, newContentStr)
@@ -199,31 +192,25 @@ async function run(args: any) {
   }
 
   try {
-    fileUpdater.updateFile(rootPackageJsonFile, (oldContent: string) => {
-      return JSON.stringify({ ...JSON.parse(oldContent), version: version }, null, 2)
-    })
-
-    if (isWorkspace()) {
-      const pnpmWorkspacesJsonString = runProjectCommand(`pnpm m ls --json`, { print: "error" }).stdout.toString()
-      let subpackages: any
-      try {
-        subpackages = JSON.parse(pnpmWorkspacesJsonString)
-      } catch (e: any) {
-        throw new Error(`Can't parse output of \`pnpm m ls --json\` as JSON: \`${e?.message}\``)
+    const pnpmWorkspacesJsonString = runProjectCommand(`pnpm m ls --json`, { print: "error" }).stdout.toString()
+    let subpackages: any
+    try {
+      subpackages = JSON.parse(pnpmWorkspacesJsonString)
+    } catch (e: any) {
+      throw new Error(`Can't parse output of \`pnpm m ls --json\` as JSON: \`${e?.message}\``)
+    }
+    for (const subpackage of subpackages) {
+      const subpackagePath = subpackage.path
+      const subpackagePackageJsonFile = path.resolve(subpackagePath, "package.json")
+      if (!fs.existsSync(subpackagePackageJsonFile)) {
+        throw new Error(`Can't find package.json in ${subpackagePath}`)
       }
-      for (const subpackage of subpackages) {
-        const subpackagePath = subpackage.path
-        const subpackagePackageJsonFile = path.resolve(subpackagePath, "package.json")
-        if (!fs.existsSync(subpackagePackageJsonFile)) {
-          throw new Error(`Can't find package.json in ${subpackagePath}`)
-        }
-        fileUpdater.updateFile(subpackagePackageJsonFile, (oldContent: string) => {
-          const packageJson = JSON.parse(oldContent)
-          packageJson.version = version
-          updateDependencies(packageJson, version)
-          return JSON.stringify(packageJson, null, 2)
-        })
-      }
+      fileUpdater.updateFile(subpackagePackageJsonFile, (oldContent: string) => {
+        const packageJson = JSON.parse(oldContent)
+        packageJson.version = version
+        updateDependencies(packageJson, version)
+        return JSON.stringify(packageJson, null, 2)
+      })
     }
 
     if (!args.publish) {

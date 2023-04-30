@@ -1,56 +1,61 @@
-lockfileVersion: 5.4
-
-specifiers:
-  '@types/minimist': ^1.2.2
-  '@types/node': ^18.0.0
-  husky: ^8.0.0
-  minimist: ^1.2.6
-  prettier: ^2.7.1
-  tslib: ^2.4.0
-  typescript: ^4.7.4
+lockfileVersion: '6.0'
 
 dependencies:
-  minimist: 1.2.6
-  tslib: 2.4.0
+  minimist:
+    specifier: ^1.2.6
+    version: 1.2.6
+  tslib:
+    specifier: ^2.4.0
+    version: 2.4.0
 
 devDependencies:
-  '@types/minimist': 1.2.2
-  '@types/node': 18.0.0
-  husky: 8.0.1
-  prettier: 2.7.1
-  typescript: 4.7.4
+  '@types/minimist':
+    specifier: ^1.2.2
+    version: 1.2.2
+  '@types/node':
+    specifier: ^18.0.0
+    version: 18.0.0
+  husky:
+    specifier: ^8.0.0
+    version: 8.0.1
+  prettier:
+    specifier: ^2.7.1
+    version: 2.7.1
+  typescript:
+    specifier: ^4.7.4
+    version: 4.7.4
 
 packages:
 
-  /@types/minimist/1.2.2:
+  /@types/minimist@1.2.2:
     resolution: {integrity: sha512-jhuKLIRrhvCPLqwPcx6INqmKeiA5EWrsCOPhrlFSrbrmU4ZMPjj5Ul/oLCMDO98XRUIwVm78xICz4EPCektzeQ==}
     dev: true
 
-  /@types/node/18.0.0:
+  /@types/node@18.0.0:
     resolution: {integrity: sha512-cHlGmko4gWLVI27cGJntjs/Sj8th9aYwplmZFwmmgYQQvL5NUsgVJG7OddLvNfLqYS31KFN0s3qlaD9qCaxACA==}
     dev: true
 
-  /husky/8.0.1:
+  /husky@8.0.1:
     resolution: {integrity: sha512-xs7/chUH/CKdOCs7Zy0Aev9e/dKOMZf3K1Az1nar3tzlv0jfqnYtu235bstsWTmXOR0EfINrPa97yy4Lz6RiKw==}
     engines: {node: '>=14'}
     hasBin: true
     dev: true
 
-  /minimist/1.2.6:
+  /minimist@1.2.6:
     resolution: {integrity: sha512-Jsjnk4bw3YJqYzbdyBiNsPWHPfO++UGG749Cxs6peCu5Xg4nrena6OVxOYxrQTqww0Jmwt+Ref8rggumkTLz9Q==}
     dev: false
 
-  /prettier/2.7.1:
+  /prettier@2.7.1:
     resolution: {integrity: sha512-ujppO+MkdPqoVINuDFDRLClm7D78qbDt0/NR+wp5FqEZOoTNAjPHWj17QRhu7geIHJfcNhRk1XVQmF8Bp3ye+g==}
     engines: {node: '>=10.13.0'}
     hasBin: true
     dev: true
 
-  /tslib/2.4.0:
+  /tslib@2.4.0:
     resolution: {integrity: sha512-d6xOpEDfsi2CZVlPQzGeux8XMwLT9hssAsaPYExaQMuYskwb+x1x7J371tWlbBdWHroy99KnVB6qIkUbs5X3UQ==}
     dev: false
 
-  /typescript/4.7.4:
+  /typescript@4.7.4:
     resolution: {integrity: sha512-C0WQT0gezHuw6AdY1M2jxUO83Rjf0HP7Sk1DtXj6j1EwkQNZrHAg2XPWlq62oqEhYvONq5pkC2Y9oPljWToLmQ==}
     engines: {node: '>=4.2.0'}
     hasBin: true
