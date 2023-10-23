@@ -2,10 +2,12 @@
 import * as child_process from "child_process"
 import * as path from "path"
 import * as process from "process"
-import * as console from "console"
 import * as fs from "fs"
 import { error, log, warn } from "./log"
 import { getResultOfCommand, runProjectCommand } from "./command"
+import { getSubpackages } from "./pnpm"
+import semver from "semver"
+import inquirer from "inquirer"
 
 const minimist = require("minimist")
 
@@ -16,6 +18,7 @@ function getReleaseTime(): string {
     now.getUTCHours()
   )}${twoDigit(now.getUTCMinutes())}${twoDigit(now.getUTCSeconds())}`
 }
+
 function getRevision() {
   return getResultOfCommand("git rev-list --abbrev-commit HEAD").split("\n").length
 }
@@ -87,6 +90,69 @@ function createFileUpdater(): FileUpdater {
   }
 }
 
+export type Version = {
+  version: string
+  base: string
+  marker?: string
+  type: "canary" | "release"
+}
+
+async function askForVersion(pkgName: string, canary: boolean) {
+  const subpackages = getSubpackages()
+  const allVersions = subpackages
+    .map(subpackage => {
+      try {
+        return JSON.parse(
+          getResultOfCommand(`pnpm view ${subpackage.name} versions --json`, { print: "nothing" })
+        ) as string[]
+      } catch (e) {
+        //ignore
+        return []
+      }
+    })
+    .flat() as string[]
+  //remove duplicates
+  const versions = Array.from(new Set(allVersions))
+    .map(version => {
+      if (semver.valid(version)) {
+        const parsedVersion = semver.parse(version)!
+        return {
+          type: parsedVersion?.prerelease?.length > 0 ? "canary" : "release",
+          base: `${parsedVersion.major}.${parsedVersion.minor}.${parsedVersion.patch}`,
+          marker: parsedVersion?.prerelease?.[0],
+          version: version,
+        } as Version
+      }
+    })
+    .filter(v => !!v) as Version[]
+
+  const lastVersion = versions
+    .filter(v => v.type === (canary ? "canary" : "release"))
+    .sort((a, b) => semver.compare(a.version, b.version))
+    .pop()!
+
+  const suggestedVersion =
+    canary && lastVersion
+      ? placeholder(`${lastVersion.base}-${lastVersion.marker || "canary"}.{rev}.{time}`, {
+          rev: getRevision,
+          time: getReleaseTime,
+        })
+      : lastVersion
+      ? semver.inc(lastVersion.version, canary ? "prerelease" : "patch")
+      : "0.0.1"
+  const { version: newVersion } = await inquirer.prompt<{ version: string }>([
+    {
+      type: "input",
+      name: "version",
+      message: `Enter new version${
+        lastVersion ? ` (last ${canary ? "canary" : "release"} version ${lastVersion.version})` : ``
+      }`,
+      default: suggestedVersion,
+    },
+  ])
+  return newVersion
+}
+
 async function run(args: any) {
   const workingDir = path.resolve(args["dir"] || process.cwd() || ".")
   const rootPackageJsonFile = path.resolve(workingDir, "package.json")
@@ -100,12 +166,17 @@ async function run(args: any) {
     log("No filter specified, running release for all packages")
   }
 
-  if (!args.version) {
-    throw new Error(`--version command line argument is required`)
-  }
-
   if (!args["npm-tag"]) {
     throw new Error(`--npm-tag command line argument is required`)
+  }
+
+  if (!args.version) {
+    args.version = await askForVersion(packageJson.name, args["npm-tag"] === "canary")
+    if (args.version) {
+      log(`Will release version ${args.version}`)
+    } else {
+      throw new Error(`Please, specify version with --version argument`)
+    }
   }
 
   const whoami = npmWhoami()
@@ -137,13 +208,7 @@ async function run(args: any) {
   }
 
   try {
-    const pnpmWorkspacesJsonString = runProjectCommand(`pnpm m ls --json`, { print: "error" }).stdout.toString()
-    let subpackages: any
-    try {
-      subpackages = JSON.parse(pnpmWorkspacesJsonString)
-    } catch (e: any) {
-      throw new Error(`Can't parse output of \`pnpm m ls --json\` as JSON: \`${e?.message}\``)
-    }
+    const subpackages = getSubpackages()
     for (const subpackage of subpackages) {
       const subpackagePath = subpackage.path
       const subpackagePackageJsonFile = path.resolve(subpackagePath, "package.json")

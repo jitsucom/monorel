@@ -15,7 +15,7 @@
     "format": "prettier --write --config ./.prettierrc.json --ignore-path ./.prettierignore .",
     "monorel": "./bin/monorel",
     "release:publish": "pnpm monorel --npm-tag latest --git-tag 'release-v{version}' --push-tags",
-    "canary:publish": "pnpm monorel --version '0.4.3-alpha.{rev}.{time}' --npm-tag canary --git-tag 'canary-v{version}' --push-tag --publish",
+    "canary:publish": "pnpm monorel --npm-tag canary --git-tag 'canary-v{version}' --push-tag --publish",
     "ci": "pnpm clean && pnpm build && pnpm canary:publish",
     "prepare": "husky install",
     "precommit": "pnpm format:check"
@@ -35,14 +35,18 @@
   "author": "Vladimir Klimontovich <vladimir@jitsu.com>",
   "license": "MIT",
   "devDependencies": {
+    "@types/inquirer": "^8.2.9",
     "@types/minimist": "^1.2.2",
     "@types/node": "^18.0.0",
+    "husky": "^8.0.0",
     "prettier": "^2.7.1",
-    "typescript": "^4.7.4",
-    "husky": "^8.0.0"
+    "typescript": "^4.7.4"
   },
   "dependencies": {
+    "@types/semver": "^7.5.4",
+    "inquirer": "^8.0.0",
     "minimist": "^1.2.6",
+    "semver": "^7.5.4",
     "tslib": "^2.4.0"
   }
 }

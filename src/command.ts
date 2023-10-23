@@ -2,8 +2,8 @@ import { log } from "./log"
 import child_process from "child_process"
 import console from "console"
 
-export function getResultOfCommand(command: string): string {
-  const { stdout } = runProjectCommand(command, { print: "error" })
+export function getResultOfCommand(command: string, opts: CommandOpts = { print: "error" }): string {
+  const { stdout } = runProjectCommand(command, opts)
   return stdout.toString().trim()
 }
 
