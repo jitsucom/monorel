@@ -153,7 +153,24 @@ async function askForVersion(pkgName: string, canary: boolean) {
   return newVersion
 }
 
+function getToolingVersions(): { node: string; pnpm?: string; npm?: string } {
+  return {
+    node: process.versions.node,
+    pnpm: getResultOfCommand("pnpm --version", { onError: "" }),
+    npm: getResultOfCommand("npm --version", { onError: "" }),
+  }
+}
+
 async function run(args: any) {
+  const toolingVersions = getToolingVersions()
+  log(`Environment: pnpm v${toolingVersions.pnpm}, node v${toolingVersions.node}, npm v${toolingVersions.npm}`)
+  if (!toolingVersions.npm) {
+    throw new Error(`Can't find npm. Please make sure you have npm installed, check with npm --version`)
+  }
+  if (!toolingVersions.pnpm) {
+    throw new Error(`Can't find pnpm. Please, install it with \`npm i -g pnpm\`, check with pnpm --version`)
+  }
+
   const workingDir = path.resolve(args["dir"] || process.cwd() || ".")
   const rootPackageJsonFile = path.resolve(workingDir, "package.json")
   if (!fs.existsSync(rootPackageJsonFile)) {

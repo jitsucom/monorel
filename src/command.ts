@@ -2,9 +2,20 @@ import { log } from "./log"
 import child_process from "child_process"
 import console from "console"
 
-export function getResultOfCommand(command: string, opts: CommandOpts = { print: "error" }): string {
-  const { stdout } = runProjectCommand(command, opts)
-  return stdout.toString().trim()
+export function getResultOfCommand(
+  command: string,
+  opts: CommandOpts & { onError?: string } = { print: "error" }
+): string {
+  try {
+    const { stdout } = runProjectCommand(command, opts)
+    return stdout.toString().trim()
+  } catch (e: any) {
+    if (opts.onError !== undefined) {
+      return opts.onError
+    } else {
+      throw e
+    }
+  }
 }
 
 export type CommandOpts = {
