@@ -4,50 +4,10 @@ import * as path from "path"
 import * as process from "process"
 import * as console from "console"
 import * as fs from "fs"
+import { error, log, warn } from "./log"
+import { getResultOfCommand, runProjectCommand } from "./command"
 
 const minimist = require("minimist")
-
-function getFromCli(command: string): string {
-  const { stdout } = runProjectCommand(command, { print: "error" })
-  return stdout.toString().trim()
-}
-
-function runProjectCommand(
-  command: string,
-  opts: {
-    print?: "error" | "all" | "nothing"
-    error?: (cmd: string, status: number) => string
-  } = {}
-) {
-  const print = opts?.print || "all"
-  log(`Running \`${command}\``)
-  const { status, stderr, stdout } = child_process.spawnSync(command, {
-    shell: true,
-  })
-  if (status !== 0) {
-    const errorMsg = opts.error ? opts.error(command, status || 0) : `Command ${command} failed with status ${status}`
-    if (print === "error" || print === "all") {
-      console.log(printStdout(stderr, ` > `))
-      console.log(printStdout(stdout, ` > `))
-    }
-    throw new Error(errorMsg)
-  }
-  if (print === "all") {
-    log(printStdout(stderr, ` > `))
-    log(printStdout(stdout, ` > `))
-  }
-  return { stdout, stderr }
-}
-
-function printStdout(stdout: any, prefix: string) {
-  return [
-    "",
-    ...stdout
-      .toString()
-      .split("\n")
-      .filter((line: any) => line.toString().trim() !== ""),
-  ].join(`\n${prefix}`)
-}
 
 function getReleaseTime(): string {
   const twoDigit = (val: string | number) => (val.toString().length == 1 ? `0${val.toString()}` : val.toString())
@@ -57,7 +17,7 @@ function getReleaseTime(): string {
   )}${twoDigit(now.getUTCMinutes())}${twoDigit(now.getUTCSeconds())}`
 }
 function getRevision() {
-  return getFromCli("git rev-list --abbrev-commit HEAD").split("\n").length
+  return getResultOfCommand("git rev-list --abbrev-commit HEAD").split("\n").length
 }
 
 function buildFilterArgs(filter: string | string[] | undefined | null): string {
@@ -66,21 +26,6 @@ function buildFilterArgs(filter: string | string[] | undefined | null): string {
   }
   return (typeof filter === "string" ? [filter] : filter).map(f => `--filter '${f}'`).join(" ")
 }
-
-type Logger = (arg: any, ...args: any[]) => void
-
-function createLogger(level: "log" | "error" | "debug" | "warn"): Logger {
-  const logFunction = console[level]
-  return (arg: any, ...args: any[]) => {
-    const msg = "[monorel] " + (arg ? arg.toString() : "")
-    logFunction(...[msg, ...args])
-  }
-}
-
-const log = createLogger("log"),
-  debug = createLogger("debug"),
-  warn = createLogger("warn"),
-  error = createLogger("error")
 
 function placeholder(text: string, params: Record<string, (() => any) | any>) {
   for (const [param, val] of Object.entries(params)) {
@@ -185,7 +130,7 @@ async function run(args: any) {
     throw new Error(`Can't find original version of the package. All env variables: ${JSON.stringify(process.env)}`)
   }
   log(`Releasing version ${version} (current version ${originalVersion}). Git tag: ${gitTag}`)
-  if (getFromCli(`git tag -l ${gitTag}`).trim() !== "") {
+  if (getResultOfCommand(`git tag -l ${gitTag}`).trim() !== "") {
     throw new Error(
       `Tag ${gitTag} already exists. Seems like version ${version} has already been released. If you believe this is an error, please run \`git tag -d ${gitTag}\``
     )
